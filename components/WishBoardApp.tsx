@@ -48,9 +48,9 @@ type PlaceholderPhoto = {
 const placeholderPhotos: PlaceholderPhoto[] = [
   { id: "jen-childhood", src: "/placeholders/jen-01.jpg", rotation: -5, caption: "Childhood Jen", aspectRatio: 0.774 },
   { id: "jen-chinatown", src: "/placeholders/jen-02.jpg", rotation: 3, caption: "Little adventure", aspectRatio: 1.333 },
-  { id: "jen-paris", src: "/placeholders/jen-03.jpg", rotation: -2, caption: "Birthday flowers", aspectRatio: 1.777 },
-  { id: "jen-village", src: "/placeholders/jen-04.jpg", rotation: 4, caption: "Postcard day", aspectRatio: 1.777 },
-  { id: "jen-sunny", src: "/placeholders/jen-05.jpg", rotation: -4, caption: "Sunny side", aspectRatio: 1.777 },
+  { id: "jen-paris", src: "/placeholders/jen-03.jpg", rotation: -2, caption: "Birthday flowers", aspectRatio: 0.563 },
+  { id: "jen-village", src: "/placeholders/jen-04.jpg", rotation: 4, caption: "Postcard day", aspectRatio: 0.563 },
+  { id: "jen-sunny", src: "/placeholders/jen-05.jpg", rotation: -4, caption: "Sunny side", aspectRatio: 0.563 },
   { id: "jen-boat", src: "/placeholders/jen-06.jpg", rotation: 2, caption: "On the water", aspectRatio: 1.777 },
   { id: "jen-night", src: "/placeholders/jen-07.jpg", rotation: -3, caption: "After dark", aspectRatio: 1.333 },
   { id: "jen-snow", src: "/placeholders/jen-08.jpg", rotation: 5, caption: "Snow day", aspectRatio: 1.143 }

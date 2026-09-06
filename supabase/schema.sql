@@ -9,7 +9,7 @@ create table if not exists public.wishes (
   image_url text,
   image_path text,
   frame_fit text not null default 'contain' check (frame_fit in ('cover', 'contain')),
-  photo_aspect_ratio double precision not null default 1 check (photo_aspect_ratio between 0.62 and 1.9),
+  photo_aspect_ratio double precision not null default 1 check (photo_aspect_ratio between 0.56 and 1.9),
   edit_token text not null,
   position_x double precision not null default 50,
   position_y double precision not null default 50,
@@ -20,6 +20,12 @@ create table if not exists public.wishes (
 
 alter table public.wishes
   add column if not exists photo_aspect_ratio double precision not null default 1;
+
+alter table public.wishes
+  drop constraint if exists wishes_photo_aspect_ratio_check;
+
+alter table public.wishes
+  add constraint wishes_photo_aspect_ratio_check check (photo_aspect_ratio between 0.56 and 1.9);
 
 alter table public.wishes
   alter column frame_fit set default 'contain';

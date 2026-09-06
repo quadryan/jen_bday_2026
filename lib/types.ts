@@ -1,7 +1,7 @@
 export type FrameFit = "cover" | "contain";
 
 export const DEFAULT_PHOTO_ASPECT_RATIO = 1;
-export const MIN_PHOTO_ASPECT_RATIO = 0.62;
+export const MIN_PHOTO_ASPECT_RATIO = 0.56;
 export const MAX_PHOTO_ASPECT_RATIO = 1.9;
 
 export function normalizePhotoAspectRatio(value: unknown) {
