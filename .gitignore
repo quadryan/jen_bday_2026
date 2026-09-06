@@ -9,3 +9,4 @@ dist
 coverage
 *.log
 placeholder-originals/
+supabase/.temp/
