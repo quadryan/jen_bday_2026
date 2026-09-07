@@ -1,6 +1,6 @@
 "use client";
 
-import { Camera, Check, Eye, EyeOff, Image as ImageIcon, Pencil, Send } from "lucide-react";
+import { Camera, Check, Eye, EyeOff, Image as ImageIcon, Send } from "lucide-react";
 import { ChangeEvent, CSSProperties, FormEvent, useEffect, useMemo, useState } from "react";
 import { prepareImageForUpload, readImageAspectRatio } from "@/lib/client-image";
 import { DEFAULT_PHOTO_ASPECT_RATIO, normalizePhotoAspectRatio } from "@/lib/types";
@@ -22,7 +22,6 @@ type FormState = {
 
 type StoredSubmission = {
   wish: PublicWish;
-  editToken: string;
 };
 
 const emptyForm: FormState = {
@@ -63,7 +62,6 @@ export function WishBoardApp({ mode }: WishBoardAppProps) {
   const [ownSubmission, setOwnSubmission] = useState<StoredSubmission | null>(null);
   const [reveal, setReveal] = useState(false);
   const [demoMode, setDemoMode] = useState(false);
-  const [editingOwn, setEditingOwn] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
@@ -155,25 +153,6 @@ export function WishBoardApp({ mode }: WishBoardAppProps) {
     }
   }
 
-  function startEdit() {
-    if (!ownSubmission) {
-      return;
-    }
-
-    setForm({
-      name: ownSubmission.wish.name || "",
-      message: ownSubmission.wish.message || "",
-      memory: ownSubmission.wish.memory || "",
-      song: ownSubmission.wish.song || "",
-      frameFit: ownSubmission.wish.frameFit,
-      photoAspectRatio: normalizePhotoAspectRatio(ownSubmission.wish.photoAspectRatio),
-      image: null
-    });
-    setEditingOwn(true);
-    setNotice("");
-    setError("");
-  }
-
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
@@ -194,13 +173,8 @@ export function WishBoardApp({ mode }: WishBoardAppProps) {
         body.set("image", preparedImage.file);
       }
 
-      if (editingOwn && ownSubmission) {
-        body.set("editToken", ownSubmission.editToken);
-      }
-
-      const endpoint = editingOwn && ownSubmission ? `/api/wishes/${ownSubmission.wish.id}` : "/api/wishes";
-      const response = await fetch(endpoint, {
-        method: editingOwn ? "PATCH" : "POST",
+      const response = await fetch("/api/wishes", {
+        method: "POST",
         body
       });
       const data = (await response.json()) as { wish?: PublicWish; editToken?: string; error?: string };
@@ -210,8 +184,7 @@ export function WishBoardApp({ mode }: WishBoardAppProps) {
       }
 
       const stored = {
-        wish: data.wish,
-        editToken: data.editToken || ownSubmission?.editToken || ""
+        wish: data.wish
       };
 
       setOwnSubmission(stored);
@@ -220,8 +193,7 @@ export function WishBoardApp({ mode }: WishBoardAppProps) {
         const exists = current.some((wish) => wish.id === data.wish?.id);
         return exists ? current.map((wish) => (wish.id === data.wish?.id ? data.wish : wish)) : [data.wish!, ...current];
       });
-      setNotice(editingOwn ? "Updated. It is back on the wall." : "Added. You can still edit it while this tab stays open.");
-      setEditingOwn(false);
+      setNotice("Added. You can see your card on the wall now.");
       setForm(emptyForm);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Could not save the wish.");
@@ -263,23 +235,19 @@ export function WishBoardApp({ mode }: WishBoardAppProps) {
       <section className="workspace-grid">
         {mode === "submit" ? (
           <aside className="submission-panel" aria-label="Birthday wish form">
-            {ownSubmission && !editingOwn ? (
+            {ownSubmission ? (
               <div className="submitted-state">
                 <div className="submitted-icon">
                   <Check size={22} aria-hidden="true" />
                 </div>
                 <h2>Your wish is pinned.</h2>
-                <p>It stays editable in this browser tab. After you leave, ask the admin for changes.</p>
-                <button className="primary-button" type="button" onClick={startEdit}>
-                  <Pencil size={17} aria-hidden="true" />
-                  Edit my wish
-                </button>
+                <p>Need a change later? Text Ryan.</p>
               </div>
             ) : (
               <form className="wish-form" onSubmit={handleSubmit}>
                 <div className="form-heading">
-                  <h2>{editingOwn ? "Edit your wish" : "Pin a polaroid"}</h2>
-                  <span>{editingOwn ? "Still in this tab" : "For Jen"}</span>
+                  <h2>Pin a polaroid</h2>
+                  <span>For Jen</span>
                 </div>
 
                 <label>
@@ -306,7 +274,7 @@ export function WishBoardApp({ mode }: WishBoardAppProps) {
                   <label className="upload-drop">
                     <input type="file" accept="image/*" onChange={handleImage} />
                     <Camera size={21} aria-hidden="true" />
-                    <span>{form.image ? form.image.name : editingOwn ? "Replace photo" : "Add photo"}</span>
+                    <span>{form.image ? form.image.name : "Add photo"}</span>
                   </label>
                   <div className="segmented" aria-label="Photo crop style">
                     <button type="button" className={form.frameFit === "cover" ? "active" : ""} onClick={() => updateField("frameFit", "cover")}>
@@ -328,14 +296,9 @@ export function WishBoardApp({ mode }: WishBoardAppProps) {
                 {notice ? <p className="form-notice">{notice}</p> : null}
 
                 <div className="form-actions">
-                  {editingOwn ? (
-                    <button className="ghost-button" type="button" onClick={() => setEditingOwn(false)}>
-                      Cancel
-                    </button>
-                  ) : null}
                   <button className="primary-button" type="submit" disabled={saving}>
                     <Send size={17} aria-hidden="true" />
-                    {saving ? "Pinning..." : editingOwn ? "Save wish" : "Pin wish"}
+                    {saving ? "Pinning..." : "Pin wish"}
                   </button>
                 </div>
               </form>
