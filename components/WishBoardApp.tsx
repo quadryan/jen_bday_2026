@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Camera, Check, Eye, EyeOff, Image as ImageIcon, Plus, Send, X } from "lucide-react";
+import { ArrowLeft, Camera, Check, Eye, EyeOff, Plus, Send, X } from "lucide-react";
 import { ChangeEvent, CSSProperties, FormEvent, useEffect, useMemo, useState } from "react";
 import { prepareImageForUpload, readImageAspectRatio } from "@/lib/client-image";
 import { DEFAULT_PHOTO_ASPECT_RATIO, normalizePhotoAspectRatio } from "@/lib/types";
@@ -64,6 +64,7 @@ export function WishBoardApp({ mode }: WishBoardAppProps) {
   const [reviewing, setReviewing] = useState(false);
   const [reveal, setReveal] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [wishesLoaded, setWishesLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
@@ -71,6 +72,7 @@ export function WishBoardApp({ mode }: WishBoardAppProps) {
   useEffect(() => {
     async function load() {
       setLoading(true);
+      setWishesLoaded(false);
       setError("");
 
       try {
@@ -83,6 +85,7 @@ export function WishBoardApp({ mode }: WishBoardAppProps) {
 
         setWishes(data.wishes);
         setReveal(data.reveal);
+        setWishesLoaded(true);
       } catch (loadError) {
         setError(loadError instanceof Error ? loadError.message : "Could not load the wall.");
       } finally {
@@ -113,6 +116,29 @@ export function WishBoardApp({ mode }: WishBoardAppProps) {
     return () => URL.revokeObjectURL(url);
   }, [form.image]);
 
+  useEffect(() => {
+    if (loading || !wishesLoaded) {
+      return;
+    }
+
+    const wishIds = new Set(wishes.map((wish) => wish.id));
+    setOwnSubmissions((current) => {
+      const nextSubmissions = current.filter((submission) => wishIds.has(submission.wish.id));
+
+      if (nextSubmissions.length === current.length) {
+        return current;
+      }
+
+      if (nextSubmissions.length > 0) {
+        window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(nextSubmissions));
+      } else {
+        window.sessionStorage.removeItem(SESSION_KEY);
+      }
+
+      return nextSubmissions;
+    });
+  }, [loading, wishes, wishesLoaded]);
+
   const wallWishes = useMemo(() => {
     const ownById = new Map(ownSubmissions.map((submission) => [submission.wish.id, submission.wish]));
     const merged = wishes.map((wish) => ownById.get(wish.id) ?? wish);
@@ -124,7 +150,11 @@ export function WishBoardApp({ mode }: WishBoardAppProps) {
 
   function saveOwnSubmissions(nextSubmissions: StoredSubmission[]) {
     setOwnSubmissions(nextSubmissions);
-    window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(nextSubmissions));
+    if (nextSubmissions.length > 0) {
+      window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(nextSubmissions));
+    } else {
+      window.sessionStorage.removeItem(SESSION_KEY);
+    }
   }
 
   function openComposer() {
@@ -272,8 +302,8 @@ export function WishBoardApp({ mode }: WishBoardAppProps) {
         <section className="wall-panel" aria-label="Polaroid wish wall">
           <div className="wall-heading">
             <div>
-              <p className="eyebrow">{mode === "reveal" ? "Final wall" : "Birthday wall"}</p>
-              <h2>{reveal ? "All wishes are open" : "The wall is waiting"}</h2>
+              <p className="eyebrow">{mode === "reveal" ? "Happy Birthday Jennifer!" : "Birthday wall"}</p>
+              <h2>{reveal ? "All wishes are open" : "We love you!"}</h2>
             </div>
             <div className="wall-actions">
               <span className="wish-count">{loading ? "..." : wallWishes.length} pinned</span>
@@ -289,18 +319,12 @@ export function WishBoardApp({ mode }: WishBoardAppProps) {
           {error && !wallWishes.length ? <p className="wall-error">{error}</p> : null}
 
           <div className="polaroid-wall">
-            {wallWishes.length === 0
-              ? placeholderPhotos.map((photo) => <PlaceholderCard key={photo.id} photo={photo} />)
-              : null}
             {wallWishes.map((wish, index) => (
               <WishCard key={wish.id} wish={wish} index={index} isOwn={ownSubmissions.some((submission) => submission.wish.id === wish.id)} />
             ))}
-            {!loading && wallWishes.length === 0 ? (
-              <div className="empty-wall polaroid-card">
-                <ImageIcon size={28} aria-hidden="true" />
-                <span>0 wishes pinned so far.</span>
-              </div>
-            ) : null}
+            {placeholderPhotos.map((photo) => (
+              <PlaceholderCard key={photo.id} photo={photo} />
+            ))}
           </div>
         </section>
       </section>
