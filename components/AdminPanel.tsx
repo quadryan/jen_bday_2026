@@ -253,10 +253,6 @@ export function AdminPanel() {
             <Plus size={17} aria-hidden="true" />
             <span>Submit</span>
           </a>
-          <a href="/reveal">
-            <Eye size={17} aria-hidden="true" />
-            <span>Final Wall</span>
-          </a>
         </nav>
       </header>
 

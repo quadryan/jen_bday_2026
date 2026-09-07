@@ -216,12 +216,6 @@ export function WishBoardApp({ mode }: WishBoardAppProps) {
           <span className="brand-pin" />
           <span>Jennifer Lee · 이채은</span>
         </a>
-        <nav className="nav-actions" aria-label="Site links">
-          <a href="/reveal">
-            <Eye size={17} aria-hidden="true" />
-            <span>Final Wall</span>
-          </a>
-        </nav>
       </header>
 
       <section className="hero-band">
