@@ -476,7 +476,7 @@ function WishCard({ wish, index, isOwn }: { wish: PublicWish; index: number; isO
         )}
       </div>
       <div className="polaroid-caption">
-        <p className="caption-name">{hidden ? "Hidden wish" : wish.name}</p>
+        <p className="caption-name">{wish.name || "Friend of Jen"}</p>
         <div className="blur-copy">
           <p className="caption-message">{hidden ? "Happy birthday Jen, wishing you the warmest year ahead." : wish.message}</p>
           {hidden ? <p className="caption-extra">Memory: a little note waiting for reveal.</p> : null}

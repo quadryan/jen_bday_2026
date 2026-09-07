@@ -76,7 +76,10 @@ export function publicWish(record: WishRecord, hidden: boolean): PublicWish {
   };
 
   if (hidden) {
-    return base;
+    return {
+      ...base,
+      name: record.name
+    };
   }
 
   return {
