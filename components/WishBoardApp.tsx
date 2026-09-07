@@ -290,7 +290,6 @@ export function WishBoardApp({ mode }: WishBoardAppProps) {
           <section className="submit-banner" aria-live="polite">
             <div>
               <h2>{ownSubmissions.length === 1 ? "Your wish is pinned." : "Your wishes are pinned."}</h2>
-              <p>{notice || "Need a change later? Text Ryan."}</p>
             </div>
             <button className="primary-button" type="button" onClick={startAnotherSubmission}>
               <Plus size={17} aria-hidden="true" />
