@@ -254,7 +254,6 @@ export function WishBoardApp({ mode }: WishBoardAppProps) {
             {reveal ? <Eye size={16} aria-hidden="true" /> : <EyeOff size={16} aria-hidden="true" />}
             {reveal ? "Reveal is live" : "Blurred until reveal"}
           </span>
-          {demoMode ? <span className="status-pill quiet">Demo mode</span> : null}
         </div>
       </section>
 
