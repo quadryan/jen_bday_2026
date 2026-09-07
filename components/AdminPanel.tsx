@@ -32,7 +32,6 @@ export function AdminPanel() {
   const [unlocked, setUnlocked] = useState(false);
   const [wishes, setWishes] = useState<PublicWish[]>([]);
   const [reveal, setReveal] = useState(false);
-  const [demoMode, setDemoMode] = useState(false);
   const [form, setForm] = useState<AdminForm>(emptyAdminForm);
   const [previewUrl, setPreviewUrl] = useState("");
   const [busy, setBusy] = useState(false);
@@ -81,7 +80,6 @@ export function AdminPanel() {
 
       setWishes(data.wishes);
       setReveal(data.reveal);
-      setDemoMode(data.demoMode);
       setUnlocked(true);
       window.sessionStorage.setItem("jen-admin-passcode", code);
     } catch (loadError) {
@@ -301,7 +299,7 @@ export function AdminPanel() {
           <form className="admin-editor" onSubmit={saveWish}>
             <div className="form-heading">
               <h2>{form.id ? "Edit wish" : "Add wish"}</h2>
-              <span>{demoMode ? "Demo mode" : reveal ? "Public" : "Hidden"}</span>
+              <span>{reveal ? "Public" : "Hidden"}</span>
             </div>
 
             <label>

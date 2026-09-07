@@ -63,7 +63,6 @@ export function WishBoardApp({ mode }: WishBoardAppProps) {
   const [composerOpen, setComposerOpen] = useState(false);
   const [reviewing, setReviewing] = useState(false);
   const [reveal, setReveal] = useState(false);
-  const [demoMode, setDemoMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
@@ -84,7 +83,6 @@ export function WishBoardApp({ mode }: WishBoardAppProps) {
 
         setWishes(data.wishes);
         setReveal(data.reveal);
-        setDemoMode(data.demoMode);
       } catch (loadError) {
         setError(loadError instanceof Error ? loadError.message : "Could not load the wall.");
       } finally {

@@ -11,7 +11,7 @@ npm install
 npm run dev
 ```
 
-Without Supabase environment variables, the app runs in demo mode with in-memory wishes. Demo submissions reset when the dev server restarts.
+Without Supabase environment variables, the app uses temporary in-memory storage. Local submissions reset when the dev server restarts.
 
 ## Supabase Setup
 

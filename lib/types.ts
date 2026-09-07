@@ -58,5 +58,4 @@ export type PublicWish = {
 export type WishListResponse = {
   wishes: PublicWish[];
   reveal: boolean;
-  demoMode: boolean;
 };

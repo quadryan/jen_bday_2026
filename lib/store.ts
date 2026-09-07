@@ -3,7 +3,7 @@ import { randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import { normalizePhotoAspectRatio } from "./types";
 import type { FrameFit, PublicWish, WishRecord } from "./types";
 
-type DemoState = {
+type MemoryState = {
   reveal: boolean;
   wishes: WishRecord[];
 };
@@ -37,10 +37,10 @@ type WishMutation = {
 };
 
 const BUCKET = process.env.SUPABASE_STORAGE_BUCKET || "wish-photos";
-const globalForDemo = globalThis as unknown as { __jenBirthdayDemo?: DemoState };
+const globalForMemoryStore = globalThis as unknown as { __jenBirthdayMemoryStore?: MemoryState };
 const SUPPORTED_UPLOAD_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 
-export function isDemoMode() {
+export function usesMemoryStore() {
   return !process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY;
 }
 
@@ -99,8 +99,7 @@ export async function listWishes(options?: { includeHiddenContent?: boolean }) {
 
   return {
     wishes: records.map((record) => publicWish(record, !showContent)),
-    reveal,
-    demoMode: isDemoMode()
+    reveal
   };
 }
 
@@ -129,8 +128,8 @@ export async function createWishFromForm(formData: FormData) {
     updatedAt: now
   };
 
-  if (isDemoMode()) {
-    demoState().wishes.unshift(record);
+  if (usesMemoryStore()) {
+    memoryStore().wishes.unshift(record);
   } else {
     const supabase = getSupabase();
     const { error } = await supabase.from("wishes").insert({
@@ -184,8 +183,8 @@ export async function updateWishFromForm(id: string, formData: FormData, options
     updatedAt: new Date().toISOString()
   };
 
-  if (isDemoMode()) {
-    const state = demoState();
+  if (usesMemoryStore()) {
+    const state = memoryStore();
     state.wishes = state.wishes.map((wish) => (wish.id === id ? updated : wish));
   } else {
     const supabase = getSupabase();
@@ -220,8 +219,8 @@ export async function deleteWish(id: string) {
     return;
   }
 
-  if (isDemoMode()) {
-    const state = demoState();
+  if (usesMemoryStore()) {
+    const state = memoryStore();
     state.wishes = state.wishes.filter((wish) => wish.id !== id);
     return;
   }
@@ -240,8 +239,8 @@ export async function deleteWish(id: string) {
 }
 
 export async function getRevealEnabled() {
-  if (isDemoMode()) {
-    return demoState().reveal;
+  if (usesMemoryStore()) {
+    return memoryStore().reveal;
   }
 
   const supabase = getSupabase();
@@ -255,8 +254,8 @@ export async function getRevealEnabled() {
 }
 
 export async function setRevealEnabled(reveal: boolean) {
-  if (isDemoMode()) {
-    demoState().reveal = reveal;
+  if (usesMemoryStore()) {
+    memoryStore().reveal = reveal;
     return reveal;
   }
 
@@ -275,8 +274,8 @@ export async function setRevealEnabled(reveal: boolean) {
 }
 
 async function readAllWishes() {
-  if (isDemoMode()) {
-    return demoState().wishes;
+  if (usesMemoryStore()) {
+    return memoryStore().wishes;
   }
 
   const supabase = getSupabase();
@@ -293,8 +292,8 @@ async function readAllWishes() {
 }
 
 async function findWish(id: string) {
-  if (isDemoMode()) {
-    return demoState().wishes.find((wish) => wish.id === id) ?? null;
+  if (usesMemoryStore()) {
+    return memoryStore().wishes.find((wish) => wish.id === id) ?? null;
   }
 
   const supabase = getSupabase();
@@ -342,7 +341,7 @@ async function storeImage(id: string, imageFile: File | null) {
 
   const bytes = Buffer.from(await imageFile.arrayBuffer());
 
-  if (isDemoMode()) {
+  if (usesMemoryStore()) {
     return {
       imageUrl: `data:${imageFile.type};base64,${bytes.toString("base64")}`,
       imagePath: undefined
@@ -368,7 +367,7 @@ async function storeImage(id: string, imageFile: File | null) {
 }
 
 async function withSignedImage(record: WishRecord): Promise<WishRecord> {
-  if (isDemoMode() || !record.imagePath) {
+  if (usesMemoryStore() || !record.imagePath) {
     return record;
   }
 
@@ -434,17 +433,17 @@ function mapRow(row: SupabaseWishRow): WishRecord {
   };
 }
 
-function demoState() {
-  if (!globalForDemo.__jenBirthdayDemo) {
-    globalForDemo.__jenBirthdayDemo = {
+function memoryStore() {
+  if (!globalForMemoryStore.__jenBirthdayMemoryStore) {
+    globalForMemoryStore.__jenBirthdayMemoryStore = {
       reveal: false,
       wishes: []
     };
   }
 
-  globalForDemo.__jenBirthdayDemo.wishes = globalForDemo.__jenBirthdayDemo.wishes.filter((wish) => !wish.id.startsWith("demo-"));
+  globalForMemoryStore.__jenBirthdayMemoryStore.wishes = globalForMemoryStore.__jenBirthdayMemoryStore.wishes.filter((wish) => !wish.id.startsWith("memory-"));
 
-  return globalForDemo.__jenBirthdayDemo;
+  return globalForMemoryStore.__jenBirthdayMemoryStore;
 }
 
 function cleanLine(value: FormDataEntryValue | null, max: number) {
