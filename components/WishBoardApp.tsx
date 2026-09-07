@@ -1,6 +1,6 @@
 "use client";
 
-import { Camera, Check, Eye, EyeOff, Image as ImageIcon, Send } from "lucide-react";
+import { Camera, Check, Eye, EyeOff, Image as ImageIcon, Plus, Send } from "lucide-react";
 import { ChangeEvent, CSSProperties, FormEvent, useEffect, useMemo, useState } from "react";
 import { prepareImageForUpload, readImageAspectRatio } from "@/lib/client-image";
 import { DEFAULT_PHOTO_ASPECT_RATIO, normalizePhotoAspectRatio } from "@/lib/types";
@@ -59,7 +59,8 @@ export function WishBoardApp({ mode }: WishBoardAppProps) {
   const [form, setForm] = useState<FormState>(emptyForm);
   const [previewUrl, setPreviewUrl] = useState("");
   const [wishes, setWishes] = useState<PublicWish[]>([]);
-  const [ownSubmission, setOwnSubmission] = useState<StoredSubmission | null>(null);
+  const [ownSubmissions, setOwnSubmissions] = useState<StoredSubmission[]>([]);
+  const [addingAnother, setAddingAnother] = useState(false);
   const [reveal, setReveal] = useState(false);
   const [demoMode, setDemoMode] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -95,7 +96,7 @@ export function WishBoardApp({ mode }: WishBoardAppProps) {
     const stored = window.sessionStorage.getItem(SESSION_KEY);
     if (stored) {
       try {
-        setOwnSubmission(JSON.parse(stored) as StoredSubmission);
+        setOwnSubmissions(parseStoredSubmissions(stored));
       } catch {
         window.sessionStorage.removeItem(SESSION_KEY);
       }
@@ -114,20 +115,25 @@ export function WishBoardApp({ mode }: WishBoardAppProps) {
   }, [form.image]);
 
   const wallWishes = useMemo(() => {
-    const merged = [...wishes];
+    const ownById = new Map(ownSubmissions.map((submission) => [submission.wish.id, submission.wish]));
+    const merged = wishes.map((wish) => ownById.get(wish.id) ?? wish);
+    const mergedIds = new Set(merged.map((wish) => wish.id));
+    const missingOwnWishes = ownSubmissions.filter((submission) => !mergedIds.has(submission.wish.id)).map((submission) => submission.wish);
 
-    if (ownSubmission) {
-      const index = merged.findIndex((wish) => wish.id === ownSubmission.wish.id);
+    return [...missingOwnWishes, ...merged];
+  }, [ownSubmissions, wishes]);
 
-      if (index >= 0) {
-        merged[index] = ownSubmission.wish;
-      } else {
-        merged.unshift(ownSubmission.wish);
-      }
-    }
+  function saveOwnSubmissions(nextSubmissions: StoredSubmission[]) {
+    setOwnSubmissions(nextSubmissions);
+    window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(nextSubmissions));
+  }
 
-    return merged;
-  }, [ownSubmission, wishes]);
+  function startAnotherSubmission() {
+    setAddingAnother(true);
+    setForm(emptyForm);
+    setNotice("");
+    setError("");
+  }
 
   function updateField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -186,14 +192,15 @@ export function WishBoardApp({ mode }: WishBoardAppProps) {
       const stored = {
         wish: data.wish
       };
+      const nextOwnSubmissions = [stored, ...ownSubmissions.filter((submission) => submission.wish.id !== data.wish?.id)];
 
-      setOwnSubmission(stored);
-      window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(stored));
+      saveOwnSubmissions(nextOwnSubmissions);
       setWishes((current) => {
         const exists = current.some((wish) => wish.id === data.wish?.id);
         return exists ? current.map((wish) => (wish.id === data.wish?.id ? data.wish : wish)) : [data.wish!, ...current];
       });
-      setNotice("Added. You can see your card on the wall now.");
+      setNotice("");
+      setAddingAnother(false);
       setForm(emptyForm);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Could not save the wish.");
@@ -235,13 +242,17 @@ export function WishBoardApp({ mode }: WishBoardAppProps) {
       <section className="workspace-grid">
         {mode === "submit" ? (
           <aside className="submission-panel" aria-label="Birthday wish form">
-            {ownSubmission ? (
+            {ownSubmissions.length > 0 && !addingAnother ? (
               <div className="submitted-state">
                 <div className="submitted-icon">
                   <Check size={22} aria-hidden="true" />
                 </div>
-                <h2>Your wish is pinned.</h2>
+                <h2>{ownSubmissions.length === 1 ? "Your wish is pinned." : "Your wishes are pinned."}</h2>
                 <p>Need a change later? Text Ryan.</p>
+                <button className="primary-button" type="button" onClick={startAnotherSubmission}>
+                  <Plus size={17} aria-hidden="true" />
+                  Submit another
+                </button>
               </div>
             ) : (
               <form className="wish-form" onSubmit={handleSubmit}>
@@ -322,7 +333,7 @@ export function WishBoardApp({ mode }: WishBoardAppProps) {
               ? placeholderPhotos.map((photo) => <PlaceholderCard key={photo.id} photo={photo} />)
               : null}
             {wallWishes.map((wish, index) => (
-              <WishCard key={wish.id} wish={wish} index={index} isOwn={ownSubmission?.wish.id === wish.id} />
+              <WishCard key={wish.id} wish={wish} index={index} isOwn={ownSubmissions.some((submission) => submission.wish.id === wish.id)} />
             ))}
             {!loading && wallWishes.length === 0 ? (
               <div className="empty-wall polaroid-card">
@@ -419,6 +430,13 @@ function polaroidSizeClass(aspectRatio: number) {
   }
 
   return "is-standard";
+}
+
+function parseStoredSubmissions(value: string): StoredSubmission[] {
+  const parsed = JSON.parse(value) as StoredSubmission | StoredSubmission[];
+  const submissions = Array.isArray(parsed) ? parsed : [parsed];
+
+  return submissions.filter((submission) => submission && submission.wish && submission.wish.id);
 }
 
 function initials(name?: string) {
