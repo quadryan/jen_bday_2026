@@ -197,7 +197,10 @@ h1 {
 .admin-actions,
 .form-actions,
 .upload-row,
-.wall-heading {
+.wall-heading,
+.wall-actions,
+.submit-banner,
+.review-actions {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -243,6 +246,10 @@ h1 {
 
 .reveal-mode .workspace-grid {
   grid-template-columns: 1fr;
+}
+
+.workspace-grid.canvas-layout {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .submission-panel,
@@ -481,6 +488,28 @@ textarea:focus {
   font-weight: 700;
 }
 
+.submit-banner {
+  justify-content: space-between;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255, 250, 240, 0.62);
+  box-shadow: 0 12px 36px rgba(75, 61, 42, 0.1);
+}
+
+.submit-banner h2 {
+  margin-bottom: 4px;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: clamp(1.2rem, 1.7vw, 1.55rem);
+}
+
+.submit-banner p {
+  margin: 0;
+  color: var(--espresso-soft);
+  font-weight: 800;
+}
+
 .wall-panel,
 .admin-list {
   min-width: 0;
@@ -491,8 +520,86 @@ textarea:focus {
   margin-bottom: 16px;
 }
 
+.wall-actions {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.wall-add-button {
+  white-space: nowrap;
+}
+
 .wall-heading .eyebrow {
   margin-bottom: 6px;
+}
+
+.composer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(75, 61, 42, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.composer-dialog {
+  position: relative;
+  width: min(720px, 100%);
+  max-height: min(880px, calc(100vh - 36px));
+  overflow: auto;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255, 250, 240, 0.96);
+  box-shadow: 0 28px 90px rgba(75, 61, 42, 0.3);
+}
+
+.composer-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+}
+
+.composer-dialog .form-heading {
+  padding-right: 48px;
+}
+
+.review-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.review-copy {
+  margin: 0;
+  color: var(--espresso-soft);
+  font-weight: 800;
+}
+
+.review-polaroid {
+  justify-self: center;
+  width: min(100%, 430px);
+  transform: none;
+}
+
+.review-polaroid:hover {
+  transform: none;
+}
+
+.review-polaroid.is-landscape {
+  grid-column: auto;
+  width: min(100%, 560px);
+}
+
+.review-polaroid.is-portrait {
+  width: min(100%, 330px);
+}
+
+.review-actions {
+  justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
 .polaroid-wall {
@@ -852,12 +959,47 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 
+  .submit-banner,
   .wall-heading {
     align-items: start;
   }
 
+  .submit-banner {
+    display: grid;
+  }
+
+  .submit-banner .primary-button {
+    width: 100%;
+  }
+
+  .wall-actions {
+    justify-content: flex-start;
+  }
+
+  .wall-add-button {
+    width: 100%;
+  }
+
   .wish-count {
     width: max-content;
+  }
+
+  .composer-overlay {
+    align-items: end;
+    padding: 0;
+  }
+
+  .composer-dialog {
+    width: 100%;
+    max-height: calc(100vh - 18px);
+    padding: 18px 14px;
+    border-radius: 8px 8px 0 0;
+  }
+
+  .review-actions .ghost-button,
+  .review-actions .primary-button,
+  .form-actions .primary-button {
+    flex: 1 1 180px;
   }
 
   .polaroid-wall {

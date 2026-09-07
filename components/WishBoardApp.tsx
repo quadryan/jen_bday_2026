@@ -1,6 +1,6 @@
 "use client";
 
-import { Camera, Check, Eye, EyeOff, Image as ImageIcon, Plus, Send } from "lucide-react";
+import { ArrowLeft, Camera, Check, Eye, EyeOff, Image as ImageIcon, Plus, Send, X } from "lucide-react";
 import { ChangeEvent, CSSProperties, FormEvent, useEffect, useMemo, useState } from "react";
 import { prepareImageForUpload, readImageAspectRatio } from "@/lib/client-image";
 import { DEFAULT_PHOTO_ASPECT_RATIO, normalizePhotoAspectRatio } from "@/lib/types";
@@ -60,7 +60,8 @@ export function WishBoardApp({ mode }: WishBoardAppProps) {
   const [previewUrl, setPreviewUrl] = useState("");
   const [wishes, setWishes] = useState<PublicWish[]>([]);
   const [ownSubmissions, setOwnSubmissions] = useState<StoredSubmission[]>([]);
-  const [addingAnother, setAddingAnother] = useState(false);
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [reviewing, setReviewing] = useState(false);
   const [reveal, setReveal] = useState(false);
   const [demoMode, setDemoMode] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -128,11 +129,28 @@ export function WishBoardApp({ mode }: WishBoardAppProps) {
     window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(nextSubmissions));
   }
 
-  function startAnotherSubmission() {
-    setAddingAnother(true);
+  function openComposer() {
+    setComposerOpen(true);
+    setReviewing(false);
     setForm(emptyForm);
     setNotice("");
     setError("");
+  }
+
+  function closeComposer() {
+    if (saving) {
+      return;
+    }
+
+    setComposerOpen(false);
+    setReviewing(false);
+    setForm(emptyForm);
+    setNotice("");
+    setError("");
+  }
+
+  function startAnotherSubmission() {
+    openComposer();
   }
 
   function updateField<K extends keyof FormState>(key: K, value: FormState[K]) {
@@ -159,8 +177,14 @@ export function WishBoardApp({ mode }: WishBoardAppProps) {
     }
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleReview(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setReviewing(true);
+    setError("");
+    setNotice("");
+  }
+
+  async function confirmSubmit() {
     setSaving(true);
     setError("");
     setNotice("");
@@ -199,8 +223,9 @@ export function WishBoardApp({ mode }: WishBoardAppProps) {
         const exists = current.some((wish) => wish.id === data.wish?.id);
         return exists ? current.map((wish) => (wish.id === data.wish?.id ? data.wish : wish)) : [data.wish!, ...current];
       });
-      setNotice("");
-      setAddingAnother(false);
+      setNotice("Pinned. Need a change later? Text Ryan.");
+      setComposerOpen(false);
+      setReviewing(false);
       setForm(emptyForm);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Could not save the wish.");
@@ -233,82 +258,18 @@ export function WishBoardApp({ mode }: WishBoardAppProps) {
         </div>
       </section>
 
-      <section className="workspace-grid">
-        {mode === "submit" ? (
-          <aside className="submission-panel" aria-label="Birthday wish form">
-            {ownSubmissions.length > 0 && !addingAnother ? (
-              <div className="submitted-state">
-                <div className="submitted-icon">
-                  <Check size={22} aria-hidden="true" />
-                </div>
-                <h2>{ownSubmissions.length === 1 ? "Your wish is pinned." : "Your wishes are pinned."}</h2>
-                <p>Need a change later? Text Ryan.</p>
-                <button className="primary-button" type="button" onClick={startAnotherSubmission}>
-                  <Plus size={17} aria-hidden="true" />
-                  Submit another
-                </button>
-              </div>
-            ) : (
-              <form className="wish-form" onSubmit={handleSubmit}>
-                <div className="form-heading">
-                  <h2>Pin a polaroid</h2>
-                  <span>For Jen</span>
-                </div>
-
-                <label>
-                  <span>Your name</span>
-                  <input value={form.name} onChange={(event) => updateField("name", event.target.value)} maxLength={80} required />
-                </label>
-
-                <label>
-                  <span>Birthday wish</span>
-                  <textarea value={form.message} onChange={(event) => updateField("message", event.target.value)} maxLength={700} rows={5} required />
-                </label>
-
-                <label>
-                  <span>Favorite memory</span>
-                  <textarea value={form.memory} onChange={(event) => updateField("memory", event.target.value)} maxLength={420} rows={3} />
-                </label>
-
-                <label>
-                  <span>Song that reminds me of you</span>
-                  <input value={form.song} onChange={(event) => updateField("song", event.target.value)} maxLength={120} />
-                </label>
-
-                <div className="upload-row">
-                  <label className="upload-drop">
-                    <input type="file" accept="image/*" onChange={handleImage} />
-                    <Camera size={21} aria-hidden="true" />
-                    <span>{form.image ? form.image.name : "Add photo"}</span>
-                  </label>
-                  <div className="segmented" aria-label="Photo crop style">
-                    <button type="button" className={form.frameFit === "cover" ? "active" : ""} onClick={() => updateField("frameFit", "cover")}>
-                      Crop
-                    </button>
-                    <button type="button" className={form.frameFit === "contain" ? "active" : ""} onClick={() => updateField("frameFit", "contain")}>
-                      Fit
-                    </button>
-                  </div>
-                </div>
-
-                {previewUrl ? (
-                  <div className="image-preview" style={photoStyle(form.photoAspectRatio)}>
-                    <img src={previewUrl} alt="" className={form.frameFit === "contain" ? "fit-contain" : ""} />
-                  </div>
-                ) : null}
-
-                {error ? <p className="form-error">{error}</p> : null}
-                {notice ? <p className="form-notice">{notice}</p> : null}
-
-                <div className="form-actions">
-                  <button className="primary-button" type="submit" disabled={saving}>
-                    <Send size={17} aria-hidden="true" />
-                    {saving ? "Pinning..." : "Pin wish"}
-                  </button>
-                </div>
-              </form>
-            )}
-          </aside>
+      <section className={`workspace-grid ${mode === "submit" ? "canvas-layout" : ""}`}>
+        {mode === "submit" && ownSubmissions.length > 0 ? (
+          <section className="submit-banner" aria-live="polite">
+            <div>
+              <h2>{ownSubmissions.length === 1 ? "Your wish is pinned." : "Your wishes are pinned."}</h2>
+              <p>{notice || "Need a change later? Text Ryan."}</p>
+            </div>
+            <button className="primary-button" type="button" onClick={startAnotherSubmission}>
+              <Plus size={17} aria-hidden="true" />
+              Submit another
+            </button>
+          </section>
         ) : null}
 
         <section className="wall-panel" aria-label="Polaroid wish wall">
@@ -317,7 +278,15 @@ export function WishBoardApp({ mode }: WishBoardAppProps) {
               <p className="eyebrow">{mode === "reveal" ? "Final wall" : "Birthday wall"}</p>
               <h2>{reveal ? "All wishes are open" : "The wall is waiting"}</h2>
             </div>
-            <span className="wish-count">{loading ? "..." : wallWishes.length} pinned</span>
+            <div className="wall-actions">
+              <span className="wish-count">{loading ? "..." : wallWishes.length} pinned</span>
+              {mode === "submit" ? (
+                <button className="primary-button wall-add-button" type="button" onClick={openComposer}>
+                  <Plus size={17} aria-hidden="true" />
+                  Add wish
+                </button>
+              ) : null}
+            </div>
           </div>
 
           {error && !wallWishes.length ? <p className="wall-error">{error}</p> : null}
@@ -338,7 +307,154 @@ export function WishBoardApp({ mode }: WishBoardAppProps) {
           </div>
         </section>
       </section>
+
+      {mode === "submit" && composerOpen ? (
+        <div className="composer-overlay">
+          <section className="composer-dialog" role="dialog" aria-modal="true" aria-labelledby="composer-title">
+            <button className="icon-button composer-close" type="button" onClick={closeComposer} aria-label="Close wish form" disabled={saving}>
+              <X size={18} aria-hidden="true" />
+            </button>
+
+            {reviewing ? (
+              <ReviewSubmission form={form} previewUrl={previewUrl} saving={saving} error={error} onEdit={() => setReviewing(false)} onConfirm={confirmSubmit} />
+            ) : (
+              <SubmissionForm form={form} previewUrl={previewUrl} saving={saving} error={error} notice={notice} onFieldChange={updateField} onImageChange={handleImage} onSubmit={handleReview} />
+            )}
+          </section>
+        </div>
+      ) : null}
     </main>
+  );
+}
+
+type SubmissionFormProps = {
+  form: FormState;
+  previewUrl: string;
+  saving: boolean;
+  error: string;
+  notice: string;
+  onFieldChange: <K extends keyof FormState>(key: K, value: FormState[K]) => void;
+  onImageChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+};
+
+function SubmissionForm({ form, previewUrl, saving, error, notice, onFieldChange, onImageChange, onSubmit }: SubmissionFormProps) {
+  return (
+    <form className="wish-form composer-form" onSubmit={onSubmit}>
+      <div className="form-heading">
+        <h2 id="composer-title">Pin a polaroid</h2>
+        <span>For Jen</span>
+      </div>
+
+      <label>
+        <span>Your name</span>
+        <input value={form.name} onChange={(event) => onFieldChange("name", event.target.value)} maxLength={80} required />
+      </label>
+
+      <label>
+        <span>Birthday wish</span>
+        <textarea value={form.message} onChange={(event) => onFieldChange("message", event.target.value)} maxLength={700} rows={5} required />
+      </label>
+
+      <label>
+        <span>Favorite memory</span>
+        <textarea value={form.memory} onChange={(event) => onFieldChange("memory", event.target.value)} maxLength={420} rows={3} />
+      </label>
+
+      <label>
+        <span>Song that reminds me of you</span>
+        <input value={form.song} onChange={(event) => onFieldChange("song", event.target.value)} maxLength={120} />
+      </label>
+
+      <div className="upload-row">
+        <label className="upload-drop">
+          <input type="file" accept="image/*" onChange={onImageChange} />
+          <Camera size={21} aria-hidden="true" />
+          <span>{form.image ? form.image.name : "Add photo"}</span>
+        </label>
+        <div className="segmented" aria-label="Photo crop style">
+          <button type="button" className={form.frameFit === "cover" ? "active" : ""} onClick={() => onFieldChange("frameFit", "cover")}>
+            Crop
+          </button>
+          <button type="button" className={form.frameFit === "contain" ? "active" : ""} onClick={() => onFieldChange("frameFit", "contain")}>
+            Fit
+          </button>
+        </div>
+      </div>
+
+      {previewUrl ? (
+        <div className="image-preview" style={photoStyle(form.photoAspectRatio)}>
+          <img src={previewUrl} alt="" className={form.frameFit === "contain" ? "fit-contain" : ""} />
+        </div>
+      ) : null}
+
+      {error ? <p className="form-error">{error}</p> : null}
+      {notice ? <p className="form-notice">{notice}</p> : null}
+
+      <div className="form-actions">
+        <button className="primary-button" type="submit" disabled={saving}>
+          <Send size={17} aria-hidden="true" />
+          Review wish
+        </button>
+      </div>
+    </form>
+  );
+}
+
+type ReviewSubmissionProps = {
+  form: FormState;
+  previewUrl: string;
+  saving: boolean;
+  error: string;
+  onEdit: () => void;
+  onConfirm: () => void;
+};
+
+function ReviewSubmission({ form, previewUrl, saving, error, onEdit, onConfirm }: ReviewSubmissionProps) {
+  return (
+    <div className="review-panel">
+      <div className="form-heading">
+        <h2 id="composer-title">Confirm your wish</h2>
+        <span>Last look</span>
+      </div>
+
+      <p className="review-copy">Once this is pinned, Ryan can edit it for you later.</p>
+
+      <article className={`polaroid-card review-polaroid ${polaroidSizeClass(form.photoAspectRatio)}`} style={polaroidStyle(0, form.photoAspectRatio)}>
+        <span className="tape tape-left" />
+        <span className="tape tape-right" />
+        <div className={`photo-frame ${form.frameFit === "contain" ? "contain" : ""}`}>
+          {previewUrl ? (
+            <img src={previewUrl} alt="" />
+          ) : (
+            <div className="photo-placeholder">
+              <span>{initials(form.name)}</span>
+            </div>
+          )}
+        </div>
+        <div className="polaroid-caption">
+          <p className="caption-name">{form.name}</p>
+          <div className="blur-copy">
+            <p className="caption-message">{form.message}</p>
+            {form.memory ? <p className="caption-extra">Memory: {form.memory}</p> : null}
+            {form.song ? <p className="caption-extra">Song: {form.song}</p> : null}
+          </div>
+        </div>
+      </article>
+
+      {error ? <p className="form-error">{error}</p> : null}
+
+      <div className="review-actions">
+        <button className="ghost-button" type="button" onClick={onEdit} disabled={saving}>
+          <ArrowLeft size={17} aria-hidden="true" />
+          Edit
+        </button>
+        <button className="primary-button" type="button" onClick={onConfirm} disabled={saving}>
+          <Check size={17} aria-hidden="true" />
+          {saving ? "Pinning..." : "Confirm & pin"}
+        </button>
+      </div>
+    </div>
   );
 }
 
