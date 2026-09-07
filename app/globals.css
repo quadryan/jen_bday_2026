@@ -517,7 +517,7 @@ textarea:focus {
 
 .wall-heading {
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: clamp(30px, 4vw, 52px);
 }
 
 .wall-actions {
