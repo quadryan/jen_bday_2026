@@ -275,7 +275,7 @@ export function WishBoardApp({ mode }: WishBoardAppProps) {
         <div className="hero-copy">
           <h1>Jen&apos;s 23rd Birthday Wish Compilation</h1>
           <p className="korean-name">이채은</p>
-          <p className="lede">Leave a little birthday note for Jennifer.</p>
+          <p className="lede">Leave a little birthday note for Jennifer. Her birthday is 16 September.</p>
         </div>
         <div className="status-strip" aria-live="polite">
           <span className={`status-pill ${reveal ? "live" : ""}`}>
